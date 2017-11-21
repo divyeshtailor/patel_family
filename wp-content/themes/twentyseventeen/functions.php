@@ -584,3 +584,142 @@ require get_parent_theme_file_path( '/inc/customizer.php' );
  * SVG icons functions and filters.
  */
 require get_parent_theme_file_path( '/inc/icon-functions.php' );
+
+function add_member() {
+	register_post_type('add_member',
+		array(
+			'labels' => array(
+				'name' => 'Manage Members',
+				'singular_name' => 'Movie Review',
+				'add_new' => 'New Member',
+				'add_new_item' => 'Add New Member',
+				'edit' => 'Edit',
+				'edit_item' => 'Edit Member',
+				'new_item' => 'New Member',
+				'view' => 'View',
+				'view_item' => 'View Members',
+				'search_items' => 'Search Member',
+				'not_found' => 'No Member found',
+				'not_found_in_trash' => 'No Member found in Trash'
+			),
+
+			'public' => true,
+			'menu_position' => 15,
+			'supports' => array('title', 'thumbnail'),
+			'taxonomies' => array(''),
+			'menu_icon' => plugins_url('images/image.png', __FILE__),
+			'has_archive' => true
+		)
+	);
+}
+
+add_action( 'init', 'add_member' );
+
+add_action( 'admin_init', 'my_admin' );
+
+function my_admin() {
+	add_meta_box( 'movie_review_meta_box',
+		'Family Details',
+		'display_movie_review_meta_box',
+		'add_member'
+	);
+	add_meta_box( 'personal_detail_meta_box',
+		'Personal Details',
+		'display_personal_detail_meta_box',
+		'add_member'
+	);
+}
+
+function display_movie_review_meta_box( $movie_review ) {
+	// Retrieve current name of the Director and Movie Rating based on review ID
+	$father = esc_html( get_post_meta( $movie_review->ID, 'father', true ) );
+	$mother = esc_html( get_post_meta( $movie_review->ID, 'mother', true ) );
+	?>
+	<table>
+		<tr>
+			<td style="width: 100px">Father</td>
+			<td>
+				<?php // echo $_GET['post']; ?>
+				<select style="width: 100px" name="father">
+					<?php
+					// Generate all items of drop-down list
+					$query = new WP_Query(array('post_type' => 'add_member'));
+					if ($query->have_posts()):
+					while ($query->have_posts()) :
+					$query->the_post();
+					if($_GET['post'] == get_the_ID()) {
+						break;
+					}
+					?>
+					<option value="<?php echo the_ID(); ?>" <?php echo selected(get_the_ID(), $father); ?> >
+						<?php the_title();
+						endwhile;
+						endif;
+						wp_reset_query();
+						?>
+				</select>
+			</td>
+		</tr>
+		<tr>
+			<td style="width: 100px">Mother</td>
+			<td>
+				<?php // echo $mother; ?>
+				<select style="width: 100px" name="mother">
+					<?php
+					// Generate all items of drop-down list
+					$query = new WP_Query(array('post_type' => 'add_member'));
+					if ($query->have_posts()):
+					while ($query->have_posts()) :
+					$query->the_post();
+					if($_GET['post'] == get_the_ID()) {
+						break;
+					}
+					?>
+					<option value="<?php echo the_ID(); ?>" <?php echo selected(get_the_ID(), $mother); ?>>
+						<?php
+						the_title();
+						endwhile;
+						endif;
+						wp_reset_query();
+						?>
+				</select>
+			</td>
+		</tr>
+	</table>
+	<?php
+}
+
+function display_personal_detail_meta_box( $movie_review ) {
+	// Retrieve current name of the Director and Movie Rating based on review ID
+	$birthday = esc_html( get_post_meta( $movie_review->ID, 'birthday', true ) );
+	?>
+	<table>
+		<tr>
+			<td style="width: 100px">Birthday</td>
+			<td>
+				<?php // echo $_GET['post']; ?>
+				<input type="date" name="birthday" value="<?php echo $birthday; ?>" />
+			</td>
+		</tr>
+	</table>
+	<?php
+}
+
+add_action( 'save_post', 'add_movie_review_fields', 10, 2 );
+
+function add_movie_review_fields( $movie_review_id, $movie_review ) {
+	// Check post type for movie reviews
+	if ( $movie_review->post_type == 'add_member' ) {
+		// Store data in post meta table if present in post data
+		if ( isset( $_POST['father'] ) && $_POST['father'] != '' ) {
+			update_post_meta( $movie_review_id, 'father', $_POST['father'] );
+		}
+		if ( isset( $_POST['mother'] ) && $_POST['mother'] != '' ) {
+			update_post_meta( $movie_review_id, 'mother', $_POST['mother'] );
+		}
+		if ( isset( $_POST['birthday'] ) && $_POST['birthday'] != '' ) {
+			update_post_meta( $movie_review_id, 'birthday', $_POST['birthday'] );
+		}
+	}
+}
+
